@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备租赁情况记录</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: hsl(0, 6%, 85%); /* 浅灰色背景 */
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #f4f2f2; /* 表格背景为白色 */
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-container {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            background-color: #fff; /* 表单区域白色背景 */
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .form-container div {
+            flex: 1;
+            min-width: 150px;
+            margin-right: 10px;
+        }
+        .form-container button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .action-buttons button {
+            padding: 5px 10px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .action-buttons button:hover {
+            background-color: #005f6b;
+        }
+        .delete-button {
+            background-color: #f44336;
+        }
+        .delete-button:hover {
+            background-color: #e53935;
+        }
+        .save-button {
+            background-color: #4CAF50;
+        }
+        .save-button:hover {
+            background-color: #45a049;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            background-color: #fff; /* 搜索框区域白色背景 */
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .search-container input {
+            width: 50%;
+            padding: 8px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .search-container button {
+            padding: 8px 12px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .search-container button:hover {
+            background-color: #005f6b;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>设备租赁情况记录</h1>
+
+    <!-- 搜索框 -->
+    <div class="search-container">
+        <label for="searchDeviceName">搜索设备名称:</label>
+        <input type="text" id="searchDeviceName" placeholder="输入设备名称">
+        <button onclick="searchRecord()">搜索</button>
+    </div>
+
+    <div class="form-container">
+        <div><label for="customerName">客户名字:</label><input type="text" id="customerName" placeholder="输入客户名字"></div>
+        <div><label for="deviceName">设备名称:</label><input type="text" id="deviceName" placeholder="输入设备名称"></div>
+        <div><label for="siteName">前往工地名称:</label><input type="text" id="siteName" placeholder="输入工地名称"></div>
+        <div><label for="contractNumber">合同号:</label><input type="text" id="contractNumber" placeholder="输入合同号"></div>
+        <div><label for="rentalTime">租赁时间:</label><input type="date" id="rentalTime"></div>
+        <div><label for="endDate">截止日期:</label><input type="date" id="endDate"></div>
+        <div><label for="price">价格:</label><input type="number" id="price" placeholder="输入价格"></div>
+        <div><label for="freight">运费:</label><input type="number" id="freight" placeholder="输入运费"></div>
+        <div><label for="stopTime">停工时间:</label><input type="number" id="stopTime" placeholder="输入停工时间（天）"></div>
+        <div><label for="stopReason">停工原因:</label><textarea id="stopReason" rows="3" placeholder="输入停工原因"></textarea></div>
+        <div><label for="notes">备注:</label><textarea id="notes" rows="3" placeholder="输入备注"></textarea></div>
+    </div>
+
+    <button onclick="addRecord()">添加记录</button>
+
+    <table id="recordsTable">
+        <thead>
+            <tr>
+                <th>客户名字</th>
+                <th>设备名称</th>
+                <th>前往工地名称</th>
+                <th>合同号</th>
+                <th>租赁时间</th>
+                <th>截止日期</th>
+                <th>价格</th>
+                <th>运费</th>
+                <th>停工时间</th>
+                <th>停工原因</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 记录将显示在这里 -->
+        </tbody>
+    </table>
+
+    <script>
+        window.onload = loadRecords; // 页面加载时加载记录
+
+        function loadRecords() {
+            const records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            const tableBody = document.getElementById('recordsTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ""; // 清空当前表格内容
+            records.forEach((record, index) => {
+                const newRow = tableBody.insertRow();
+                record.forEach((cellValue, i) => {
+                    newRow.insertCell(i).textContent = cellValue;
+                });
+
+                // 添加操作按钮
+                const actionCell = newRow.insertCell(record.length);
+                const actionDiv = document.createElement('div');
+                actionDiv.className = "action-buttons";
+
+                // 修改按钮
+                const editButton = document.createElement('button');
+                editButton.textContent = '修改';
+                editButton.onclick = function() {
+                    enableEditing(newRow, index);
+                };
+                actionDiv.appendChild(editButton);
+
+                // 删除按钮
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '删除';
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = function() {
+                    if (confirm('确定要删除这条记录吗？')) {
+                        deleteRecord(newRow);
+                    }
+                };
+                actionDiv.appendChild(deleteButton);
+
+                actionCell.appendChild(actionDiv);
+            });
+        }
+
+        function addRecord() {
+            // 获取表单值
+            const customerName = document.getElementById('customerName').value;
+            const deviceName = document.getElementById('deviceName').value;
+            const siteName = document.getElementById('siteName').value;
+            const contractNumber = document.getElementById('contractNumber').value;
+            const rentalTime = document.getElementById('rentalTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const price = document.getElementById('price').value;
+            const freight = document.getElementById('freight').value;
+            const stopTime = document.getElementById('stopTime').value;
+            const stopReason = document.getElementById('stopReason').value;
+            const notes = document.getElementById('notes').value;
+
+            // 创建表格行
+            const table = document.getElementById('recordsTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+
+            // 添加每一列数据
+            newRow.insertCell(0).textContent = customerName;
+            newRow.insertCell(1).textContent = deviceName;
+            newRow.insertCell(2).textContent = siteName;
+            newRow.insertCell(3).textContent = contractNumber;
+            newRow.insertCell(4).textContent = rentalTime;
+            newRow.insertCell(5).textContent = endDate;
+            newRow.insertCell(6).textContent = price;
+            newRow.insertCell(7).textContent = freight;
+            newRow.insertCell(8).textContent = stopTime;
+            newRow.insertCell(9).textContent = stopReason;
+            newRow.insertCell(10).textContent = notes;
+
+            // 添加操作按钮
+            const actionCell = newRow.insertCell(11);
+            const actionDiv = document.createElement('div');
+            actionDiv.className = "action-buttons";
+
+            // 修改按钮
+            const editButton = document.createElement('button');
+            editButton.textContent = '修改';
+            editButton.onclick = function() {
+                enableEditing(newRow, table.rows.length - 1);
+            };
+            actionDiv.appendChild(editButton);
+
+            // 删除按钮
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '删除';
+            deleteButton.className = 'delete-button';
+            deleteButton.onclick = function() {
+                if (confirm('确定要删除这条记录吗？')) {
+                    deleteRecord(newRow);
+                }
+            };
+            actionDiv.appendChild(deleteButton);
+
+            actionCell.appendChild(actionDiv);
+
+            // 保存记录到本地存储
+            saveRecordToLocalStorage(customerName, deviceName, siteName, contractNumber, rentalTime, endDate, price, freight, stopTime, stopReason, notes);
+
+            // 清空输入框
+            clearInputs();
+        }
+
+        function enableEditing(row, index) {
+            const cells = row.getElementsByTagName('td');
+            const record = [];
+
+            for (let i = 0; i < cells.length - 1; i++) { // 不包括操作列
+                const cell = cells[i];
+                const input = document.createElement('input');
+                input.value = cell.textContent; // 填入当前单元格的值
+                cell.innerHTML = ''; // 清空单元格
+                cell.appendChild(input); // 添加输入框到单元格
+                record.push(input);
+            }
+
+            // 添加保存按钮
+            const actionCell = cells[cells.length - 1];
+            actionCell.innerHTML = ''; // 清空操作列
+            const saveButton = document.createElement('button');
+            saveButton.textContent = '保存';
+            saveButton.className = 'save-button';
+            saveButton.onclick = function() {
+                saveEditedRecord(row, record, index);
+            };
+            actionCell.appendChild(saveButton);
+
+            // 添加删除按钮
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '删除';
+            deleteButton.className = 'delete-button';
+            deleteButton.onclick = function() {
+                if (confirm('确定要删除这条记录吗？')) {
+                    deleteRecord(row);
+                }
+            };
+            actionCell.appendChild(deleteButton);
+        }
+
+        function saveEditedRecord(row, record, index) {
+            const updatedRecord = record.map(input => input.value);
+            const cells = row.getElementsByTagName('td');
+
+            // 更新行数据
+            for (let i = 0; i < updatedRecord.length; i++) {
+                cells[i].textContent = updatedRecord[i];
+            }
+
+            // 更新本地存储
+            updateLocalStorage();
+
+            // 恢复操作按钮
+            const actionCell = cells[cells.length - 1];
+            actionCell.innerHTML = ''; // 清空操作列
+            const editButton = document.createElement('button');
+            editButton.textContent = '修改';
+            editButton.onclick = function() {
+                enableEditing(row, index);
+            };
+            actionCell.appendChild(editButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '删除';
+            deleteButton.className = 'delete-button';
+            deleteButton.onclick = function() {
+                if (confirm('确定要删除这条记录吗？')) {
+                    deleteRecord(row);
+                }
+            };
+            actionCell.appendChild(deleteButton);
+        }
+
+        function deleteRecord(row) {
+            row.parentNode.removeChild(row);
+            // 更新本地存储
+            updateLocalStorage();
+        }
+
+        function saveRecordToLocalStorage(customerName, deviceName, siteName, contractNumber, rentalTime, endDate, price, freight, stopTime, stopReason, notes) {
+            const records = JSON.parse(localStorage.getItem('rentalRecords')) || [];
+            records.push([customerName, deviceName, siteName, contractNumber, rentalTime, endDate, price, freight, stopTime, stopReason, notes]);
+            localStorage.setItem('rentalRecords', JSON.stringify(records));
+        }
+
+        function updateLocalStorage() {
+            const table = document.getElementById('recordsTable').getElementsByTagName('tbody')[0];
+            const rows = table.getElementsByTagName('tr');
+            const records = [];
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                const record = [];
+                for (let j = 0; j < cells.length - 1; j++) { // 不包括操作列
+                    record.push(cells[j].textContent);
+                }
+                records.push(record);
+            }
+            localStorage.setItem('rentalRecords', JSON.stringify(records));
+        }
+
+        function clearInputs() {
+            document.getElementById('customerName').value = '';
+            document.getElementById('deviceName').value = '';
+            document.getElementById('siteName').value = '';
+            document.getElementById('contractNumber').value = '';
+            document.getElementById('rentalTime').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('freight').value = '';
+            document.getElementById('stopTime').value = '';
+            document.getElementById('stopReason').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        function searchRecord() {
+            const searchDeviceName = document.getElementById('searchDeviceName').value.toLowerCase();
+            const table = document.getElementById('recordsTable').getElementsByTagName('tbody')[0];
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                const deviceName = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+                if (deviceName.includes(searchDeviceName)) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
